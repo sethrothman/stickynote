@@ -1,5 +1,8 @@
 ﻿using Gma.System.MouseKeyHook;
+using GongSolutions.Wpf.DragDrop;
 using StickyNotesEdge.Models;
+using StickyNotesEdge.Services;
+using StickyNotesEdge.ViewModels;
 using System;
 using System.Collections.Specialized;
 using System.Linq;
@@ -15,7 +18,9 @@ namespace StickyNotesEdge
 {
     public partial class MainWindow : Window
     {
-        private NoteManager _noteManager = new NoteManager();
+        private MainViewModel viewModel;
+        private NoteManager _noteManager = new();
+
         private bool _visible = false;
         private IKeyboardMouseEvents _globalHook;
 
@@ -23,9 +28,8 @@ namespace StickyNotesEdge
         private const double CloseButtonWidth = 30 + 10; // Width + margin
         private const double AddButtonWidth = 48 + 10;   // Width + margin
 
-        private DispatcherTimer _scrollTimer;
-        private Button _currentScrollButton;
-        internal bool _notePopupIsOpen = false;
+        //private DispatcherTimer _scrollTimer;
+        private Button? _currentScrollButton;
 
         private void AdjustNotesScrollViewerWidth()
         {
@@ -52,9 +56,37 @@ namespace StickyNotesEdge
         {
             InitializeComponent();
 
-            _scrollTimer = new DispatcherTimer();
-            _scrollTimer.Interval = TimeSpan.FromMilliseconds(150);
-            _scrollTimer.Tick += ScrollTimer_Tick;
+            viewModel = new MainViewModel(new DialogService());
+            DataContext = viewModel;
+            var dropHandler = new NotesDropHandler(viewModel);
+
+            viewModel.RequestLargeNoteWindow += ShowLargeNoteWindow;
+            viewModel.RequestScrollToEnd += () =>
+            {
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    NotesScrollViewer.ScrollToRightEnd();
+                }), DispatcherPriority.Background);
+            };
+
+            viewModel.NewNoteAdded += note =>
+            {
+                Dispatcher.BeginInvoke((Action)(() =>
+                {
+                    // Wait a tiny bit more to ensure the container is ready
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        var container = NotesPanel.ItemContainerGenerator.ContainerFromItem(note) as ContentPresenter;
+                        if (container != null)
+                        {
+                            var noteControl = VisualTreeHelper.GetChild(container, 0) as StickyNoteControl;
+                            var textBox = noteControl?.FindName("NoteTextBox") as TextBox; // Adjust name if needed
+                            textBox?.Focus();
+                        }
+                    }), DispatcherPriority.Loaded);
+                }), DispatcherPriority.Background);
+            };
+
 
             this.Visibility = Visibility.Hidden;
 
@@ -62,58 +94,11 @@ namespace StickyNotesEdge
             _globalHook = Hook.GlobalEvents();
             _globalHook.MouseDownExt += GlobalHook_MouseDownExt;
 
-            NotesPanel.ItemsSource = CreateStickyNoteControls();
-
-            _noteManager.Notes.CollectionChanged += Notes_CollectionChanged;
-
             this.Left = 0;
             this.Width = SystemParameters.WorkArea.Width;
             this.Top = SystemParameters.WorkArea.Bottom - this.Height - 10;
 
             AdjustNotesScrollViewerWidth();
-        }
-
-        private List<StickyNoteControl> CreateStickyNoteControls()
-        {
-            return [.. _noteManager.Notes.Select(n => CreateStickyNoteControl(n))];
-        }
-
-        private StickyNoteControl CreateStickyNoteControl(StickyNote note)
-        {
-            var control = new StickyNoteControl { DataContext = note };
-            control.DeleteRequested += (s, e) => OnDeleteRequest(note, e);
-            return control;
-        }
-
-        private void OnDeleteRequest(StickyNote note, RoutedEventArgs e)
-        {
-            _notePopupIsOpen = true;
-            e.Handled = true;
-
-            if (MessageBox.Show("Delete this note?", "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No)
-                return;
-
-            Dispatcher.BeginInvoke(new Action(() =>
-            {
-                _noteManager.Notes.Remove(note);
-                _noteManager.Save();
-
-            }), DispatcherPriority.Background);
-        }
-
-        private void Notes_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
-        {
-            // Simple refresh; in real app, use ObservableCollection binding
-            NotesPanel.ItemsSource = CreateStickyNoteControls();
-            AdjustNotesScrollViewerWidth();
-        }
-
-        public void ToggleShowHide()
-        {
-            if (_visible)
-                HideWithAnimation();
-            else
-                ShowWithAnimation();
         }
 
         private void ShowWithAnimation()
@@ -126,46 +111,41 @@ namespace StickyNotesEdge
 
         private void HideWithAnimation()
         {
+            //save
+            viewModel.SaveChanges(viewModel.Notes);
+
             var fadeOut = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(300));
             fadeOut.Completed += (s, e) => this.Visibility = Visibility.Hidden;
             this.BeginAnimation(Window.OpacityProperty, fadeOut);
             _visible = false;
         }
 
-        private void AddNote_Click(object sender, RoutedEventArgs e)
-        {
-            var note = new StickyNote { Text = "New note" };
-            _noteManager.Notes.Add(note);
-            _noteManager.Save();
-
-            Dispatcher.BeginInvoke(new Action(() =>
-            {
-                // Scroll all the way to the right (show newest note)
-                NotesScrollViewer.ScrollToRightEnd();
-            }), System.Windows.Threading.DispatcherPriority.Background);
-        }
-
         private void GlobalHook_MouseDownExt(object? sender, MouseEventExtArgs e)
         {
-            if (_notePopupIsOpen)
+            if (viewModel.NotePopupIsOpen)
                 return; // Ignore mouse events while popup is open
 
-            // Get taskbar/work area info
             var workArea = SystemParameters.WorkArea;
             var screenHeight = SystemParameters.PrimaryScreenHeight;
 
-            // Check if the mouse is physically BELOW the work area (i.e., over the taskbar or below)
-            if (screenHeight - e.Y == 1)
+            // Check if the mouse is physically at the very bottom of the screen
+            if (screenHeight - e.Y == 1 && e.Button == System.Windows.Forms.MouseButtons.Left)
             {
-                if (e.Button == System.Windows.Forms.MouseButtons.Left)
-                {
-                    ShowWithAnimation();
-                    e.Handled = true; // Optionally block further processing (not required)
-                }
+                ShowWithAnimation();
+                e.Handled = true;
+                return;
             }
-            else if (this.IsVisible && e.Y < this.Top)
+
+            // Get the window's screen rectangle
+            var windowRect = new System.Drawing.Rectangle(
+                (int)this.Left,
+                (int)this.Top,
+                (int)this.ActualWidth,
+                (int)this.ActualHeight);
+
+            // Check if the mouse is outside the window and the panel is visible
+            if (this.IsVisible && !windowRect.Contains(e.X, e.Y))
             {
-                // If notes panel is visible and you click above it, hide it
                 HideWithAnimation();
             }
         }
@@ -173,6 +153,7 @@ namespace StickyNotesEdge
         protected override void OnClosed(EventArgs e)
         {
             base.OnClosed(e);
+
             _globalHook.MouseDownExt -= GlobalHook_MouseDownExt;
             _globalHook.Dispose();
         }
@@ -186,78 +167,97 @@ namespace StickyNotesEdge
         {
             AdjustNotesScrollViewerWidth();
             NotesScrollViewer.ScrollToHorizontalOffset(0);
-
         }
-
-        //private void LeftArrowButton_Click(object sender, RoutedEventArgs e)
-        //{
-        //    double offset = NotesScrollViewer.HorizontalOffset - 400; // scroll left by 200 px
-        //    if (offset < 0) offset = 0;
-
-        //    NotesScrollViewer.ScrollToHorizontalOffset(offset);
-        //}
-
-        //private void RightArrowButton_Click(object sender, RoutedEventArgs e)
-        //{
-        //    double maxOffset = NotesScrollViewer.ScrollableWidth;
-        //    double offset = NotesScrollViewer.HorizontalOffset + 400; // scroll right by 200 px
-        //    if (offset > maxOffset) offset = maxOffset;
-
-        //    NotesScrollViewer.ScrollToHorizontalOffset(offset); e.Handled = true;
-        //}
 
         private void LeftArrowButton_Click(object sender, RoutedEventArgs e)
         {
-            NotesScrollViewer.ScrollToHorizontalOffset(NotesScrollViewer.HorizontalOffset - 30);
+            NotesScrollViewer.AnimateScroll(NotesScrollViewer.HorizontalOffset - 250);
         }
 
         private void RightArrowButton_Click(object sender, RoutedEventArgs e)
         {
-            NotesScrollViewer.ScrollToHorizontalOffset(NotesScrollViewer.HorizontalOffset + 30);
+            NotesScrollViewer.AnimateScroll(NotesScrollViewer.HorizontalOffset + 250);
         }
 
-        private void ScrollTimer_Tick(object sender, EventArgs e)
+        public class NotesDropHandler(MainViewModel viewModel) : IDropTarget
         {
-            HandleScrollAction();
-        }
+            private MainViewModel _viewModel = viewModel;
 
-        private void ArrowButton_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            _currentScrollButton = sender as Button;
-            _scrollTimer.Start();
-            // Trigger immediate first scroll
-            HandleScrollAction();
-        }
+            public event Action? DropCompleted;
 
-        private void ArrowButton_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-        {
-            StopScrolling();
-        }
-
-        private void ArrowButton_PreviewMouseLeave(object sender, MouseEventArgs e)
-        {
-            if (Mouse.LeftButton != MouseButtonState.Pressed)
+            public void DragOver(IDropInfo dropInfo)
             {
-                StopScrolling();
+                // Allow move operations
+                dropInfo.Effects = DragDropEffects.Move;
+                dropInfo.DropTargetAdorner = DropTargetAdorners.Insert;
+            }
+
+            public void Drop(IDropInfo dropInfo)
+            {
+                var sourceItem = dropInfo.Data as StickyNote;
+                var targetList = dropInfo.TargetCollection as IList<StickyNote>;
+
+                if (sourceItem == null || targetList == null) return;
+
+                // Handle drop logic. For example, move the sourceItem to the new position.
+                // Note: If you are using a collection that does not support direct reordering,
+                // you may need to remove and re-insert the item at the new index.
+
+                // Example: Remove and re-insert at the correct position (assuming single selection)
+                if (dropInfo.InsertIndex != -1)
+                {
+                    targetList.Remove(sourceItem);
+                    targetList.Insert(dropInfo.InsertIndex, sourceItem);
+                }
+
+                // Now update SequenceNumber for all notes to match their new order
+                for (int i = 0; i < targetList.Count; i++)
+                {
+                    targetList[i].SequenceNumber = i; // or i + 1 if you want to start from 1
+                }
+
+                _viewModel.SaveChanges(targetList);
             }
         }
 
-        private void HandleScrollAction()
+        public void ShowLargeNoteWindow(StickyNote note)
         {
-            if (_currentScrollButton == LeftArrowButton)
+            var largeNote = new Window
             {
-                LeftArrowButton_Click(null, null);
-            }
-            else if (_currentScrollButton == RightArrowButton)
-            {
-                RightArrowButton_Click(null, null);
-            }
-        }
+                Title = "Sticky Note (View Large)",
+                Width = 400,
+                Height = 300,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                ResizeMode = ResizeMode.CanResize,
+                Owner = this,
+                Content = new Border
+                {
+                    Padding = new Thickness(20),
+                    Background = new SolidColorBrush(Color.FromRgb(255, 255, 200)),
+                    Child = new TextBox
+                    {
+                        Text = note.Text,
+                        FontSize = 24,
+                        Background = Brushes.Transparent,
+                        BorderThickness = new Thickness(0),
+                        IsReadOnly = true,
+                        TextWrapping = TextWrapping.Wrap,
+                        VerticalScrollBarVisibility = ScrollBarVisibility.Auto
+                    }
+                }
+            };
 
-        private void StopScrolling()
-        {
-            _scrollTimer.Stop();
-            _currentScrollButton = null;
+            var vm = DataContext as MainViewModel;
+            if (vm != null)
+                vm.NotePopupIsOpen = true;
+
+            largeNote.Closed += (s, args) =>
+            {
+                if (vm != null)
+                    vm.NotePopupIsOpen = false;
+            };
+
+            largeNote.ShowDialog();
         }
     }
 }

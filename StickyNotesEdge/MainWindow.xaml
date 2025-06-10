@@ -3,6 +3,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="clr-namespace:StickyNotesEdge"
+    xmlns:vm="clr-namespace:StickyNotesEdge.ViewModels"
     xmlns:dd="clr-namespace:GongSolutions.Wpf.DragDrop;assembly=GongSolutions.Wpf.DragDrop"
     Title="StickyNotesEdge"
     WindowStyle="None"
@@ -15,7 +16,7 @@
     Width="Auto"
     Opacity="0"
     Visibility="Hidden">
-
+    
     <Window.Resources>
         <!-- Modern Arrow Button Style -->
         <Style x:Key="ModernArrowButton" TargetType="Button">
@@ -56,17 +57,15 @@
             </Grid.ColumnDefinitions>
 
             <Button x:Name="LeftArrowButton"
-            Grid.Column="0"
-            Style="{StaticResource ModernArrowButton}"
-            Content="◄"
-            FontSize="16"
-            Margin="10,0,0,0"
-            VerticalAlignment="Center"
-            Click="LeftArrowButton_Click"
-            PreviewMouseLeftButtonDown="ArrowButton_PreviewMouseLeftButtonDown"
-            PreviewMouseLeftButtonUp="ArrowButton_PreviewMouseLeftButtonUp"
-            MouseLeave="ArrowButton_PreviewMouseLeave"
-            />
+                Grid.Column="0"
+                Style="{StaticResource ModernArrowButton}"
+                FontFamily="Segoe MDL2 Assets"
+                Content="&#xE0E2;"
+                FontSize="16"
+                Margin="10,0,0,0"
+                VerticalAlignment="Center"
+                ToolTip="Scroll Left"                    
+                Click="LeftArrowButton_Click"/>
 
             <ScrollViewer x:Name="NotesScrollViewer"
                   Grid.Column="1"
@@ -78,25 +77,32 @@
                 <ItemsControl x:Name="NotesPanel"
                       ItemsSource="{Binding Notes}"
                       dd:DragDrop.IsDragSource="True"
-                      dd:DragDrop.IsDropTarget="True">
+                      dd:DragDrop.IsDropTarget="True"
+                      dd:DragDrop.DropHandler="{Binding NotesDropHandler}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <StackPanel Orientation="Horizontal" Margin="0,0,10,0"/>
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <local:StickyNoteControl/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
                 </ItemsControl>
             </ScrollViewer>
 
             <Button x:Name="AddNoteButton"
-            Grid.Column="1"
-            Content="＋"
-            Width="48"
-            Height="120"
-            Margin="0,0,0,0"
-            FontSize="32"
-            HorizontalAlignment="Right"
-            VerticalAlignment="Center"
-            Click="AddNote_Click">
+                Grid.Column="1"
+                Content="＋"
+                Width="48"
+                Height="150"
+                Margin="0,0,0,0"
+                FontSize="32"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Center"
+                ToolTip="Add New Note"
+                Command="{Binding AddNoteCommand}">
                 <Button.Style>
                     <Style TargetType="Button">
                         <Setter Property="Background" Value="#4DFFFFFF"/>
@@ -111,24 +117,23 @@
             </Button>
 
             <Button x:Name="RightArrowButton"
-            Grid.Column="2"
-            Style="{StaticResource ModernArrowButton}"
-            Content="►"
-            FontSize="16"
-            Margin="10,0,10,0"
-            VerticalAlignment="Center"
-            Click="RightArrowButton_Click"
-            PreviewMouseLeftButtonDown="ArrowButton_PreviewMouseLeftButtonDown"
-            PreviewMouseLeftButtonUp="ArrowButton_PreviewMouseLeftButtonUp"
-            MouseLeave="ArrowButton_PreviewMouseLeave"/>
+                Grid.Column="2"
+                Style="{StaticResource ModernArrowButton}"
+                FontFamily="Segoe MDL2 Assets"
+                Content="&#xE0E3;"
+                FontSize="16"
+                Margin="10,0,10,0"
+                VerticalAlignment="Center"
+                ToolTip="Scroll Right"
+                Click="RightArrowButton_Click"/>
 
             <Button Grid.Column="2"
-            Style="{StaticResource ModernArrowButton}"
-            Margin="10"
-            HorizontalAlignment="Right" 
-            VerticalAlignment="Top"
-            ToolTip="Close"
-            Click="QuitButton_Click">
+                Style="{StaticResource ModernArrowButton}"
+                Margin="10"
+                HorizontalAlignment="Right" 
+                VerticalAlignment="Top"
+                ToolTip="Close"
+                Click="QuitButton_Click">
                 <TextBlock Text="✕" FontSize="14"/>
             </Button>
         </Grid>
