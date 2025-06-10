@@ -1,109 +1,135 @@
 ﻿<Window 
     x:Class="StickyNotesEdge.MainWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:local="clr-namespace:StickyNotesEdge"
-        xmlns:dd="clr-namespace:GongSolutions.Wpf.DragDrop;assembly=GongSolutions.Wpf.DragDrop"
-        Title="StickyNotesEdge"
-        WindowStyle="None"
-        AllowsTransparency="True"
-        Background="Transparent"
-        ShowInTaskbar="False"
-        Topmost="True"
-        ResizeMode="NoResize"
-        Height="270"
-        Width="Auto"
-        Opacity="0"
-        Visibility="Hidden">
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="clr-namespace:StickyNotesEdge"
+    xmlns:dd="clr-namespace:GongSolutions.Wpf.DragDrop;assembly=GongSolutions.Wpf.DragDrop"
+    Title="StickyNotesEdge"
+    WindowStyle="None"
+    AllowsTransparency="True"
+    Background="Transparent"
+    ShowInTaskbar="False"
+    Topmost="True"
+    ResizeMode="NoResize"
+    Height="270"
+    Width="Auto"
+    Opacity="0"
+    Visibility="Hidden">
+
+    <Window.Resources>
+        <!-- Modern Arrow Button Style -->
+        <Style x:Key="ModernArrowButton" TargetType="Button">
+            <Setter Property="Background" Value="#33000000"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="FontFamily" Value="Segoe UI Symbol"/>
+            <Setter Property="Width" Value="40"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <Ellipse x:Name="circle" Fill="{TemplateBinding Background}"/>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="circle" Property="Fill" Value="#66000000"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="circle" Property="Fill" Value="#99000000"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
     <Border Background="#40000000" VerticalAlignment="Bottom">
         <Grid Height="270" VerticalAlignment="Bottom">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
-                <!-- Left arrow -->
                 <ColumnDefinition Width="*"/>
-                <!-- Notes + Add -->
                 <ColumnDefinition Width="Auto"/>
-                <!-- Right arrow -->
-                <ColumnDefinition Width="Auto"/>
-                <!-- Close button -->
             </Grid.ColumnDefinitions>
 
-            <!-- Left Arrow (always visible) -->
             <Button x:Name="LeftArrowButton"
-                Grid.Column="0"
-                Width="30" Height="30"
-                Margin="10,0,0,0"
-                VerticalAlignment="Center"
-                Content="←"
-                Click="LeftArrowButton_Click"
-                    />
+            Grid.Column="0"
+            Style="{StaticResource ModernArrowButton}"
+            Content="◄"
+            FontSize="16"
+            Margin="10,0,0,0"
+            VerticalAlignment="Center"
+            Click="LeftArrowButton_Click"
+            PreviewMouseLeftButtonDown="ArrowButton_PreviewMouseLeftButtonDown"
+            PreviewMouseLeftButtonUp="ArrowButton_PreviewMouseLeftButtonUp"
+            MouseLeave="ArrowButton_PreviewMouseLeave"
+            />
 
-            <!-- Notes + Add Button (expand to fill available width) -->
-            <StackPanel x:Name="NotesContainerPanel"
-                Grid.Column="1"
-                Orientation="Horizontal"
-                VerticalAlignment="Center"
-                HorizontalAlignment="Stretch">
-                <ScrollViewer x:Name="NotesScrollViewer"
-                      Height="270"
-                      HorizontalScrollBarVisibility="Hidden"
-                      VerticalScrollBarVisibility="Disabled"
-                      VerticalAlignment="Center"
-                      HorizontalAlignment="Stretch"
-                      MinWidth="100">
-                    <ItemsControl x:Name="NotesPanel"
-                          ItemsSource="{Binding Notes}"
-                          Margin="0"
-                          xmlns:dd="clr-namespace:GongSolutions.Wpf.DragDrop;assembly=GongSolutions.Wpf.DragDrop"
-                          dd:DragDrop.IsDragSource="True"
-                          dd:DragDrop.IsDropTarget="True">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <StackPanel Orientation="Horizontal"/>
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                    </ItemsControl>
-                </ScrollViewer>
-                <!-- Add Button right after notes -->
-                <Button Content="＋"
-                Width="48" Height="120"
-                Margin="10,0,0,0"
-                FontSize="32"
-                Click="AddNote_Click"
-                VerticalAlignment="Center"/>
-            </StackPanel>
+            <ScrollViewer x:Name="NotesScrollViewer"
+                  Grid.Column="1"
+                  Height="270"
+                  HorizontalScrollBarVisibility="Hidden"
+                  VerticalScrollBarVisibility="Disabled"
+                  VerticalAlignment="Center"
+                  HorizontalAlignment="Stretch">
+                <ItemsControl x:Name="NotesPanel"
+                      ItemsSource="{Binding Notes}"
+                      dd:DragDrop.IsDragSource="True"
+                      dd:DragDrop.IsDropTarget="True">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,10,0"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+            </ScrollViewer>
 
-            <!-- Right Arrow (always visible) -->
-            <Button x:Name="RightArrowButton"
-                Grid.Column="2"
-                Width="30" Height="30"
-                Margin="0,0,10,0"
-                VerticalAlignment="Center"
-                Content="→"
-                Click="RightArrowButton_Click"
-                />
-
-            <!-- Close Button, at far right -->
-            <Button Grid.Column="3"
-            Width="30" Height="30"
-            Margin="10"
-            HorizontalAlignment="Right" VerticalAlignment="Top"
-            ToolTip="Close"
-            Click="QuitButton_Click">
+            <Button x:Name="AddNoteButton"
+            Grid.Column="1"
+            Content="＋"
+            Width="48"
+            Height="120"
+            Margin="0,0,0,0"
+            FontSize="32"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Center"
+            Click="AddNote_Click">
                 <Button.Style>
-                    <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                    <Style TargetType="Button">
+                        <Setter Property="Background" Value="#4DFFFFFF"/>
                         <Setter Property="Foreground" Value="Black"/>
-                        <Setter Property="Background" Value="Transparent"/>
-                        <Setter Property="BorderBrush" Value="Transparent"/>
                         <Style.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#FFDC143C"/>
-                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="Background" Value="#80FFFFFF"/>
                             </Trigger>
                         </Style.Triggers>
                     </Style>
                 </Button.Style>
-                <TextBlock Text="✕" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Button>
+
+            <Button x:Name="RightArrowButton"
+            Grid.Column="2"
+            Style="{StaticResource ModernArrowButton}"
+            Content="►"
+            FontSize="16"
+            Margin="10,0,10,0"
+            VerticalAlignment="Center"
+            Click="RightArrowButton_Click"
+            PreviewMouseLeftButtonDown="ArrowButton_PreviewMouseLeftButtonDown"
+            PreviewMouseLeftButtonUp="ArrowButton_PreviewMouseLeftButtonUp"
+            MouseLeave="ArrowButton_PreviewMouseLeave"/>
+
+            <Button Grid.Column="2"
+            Style="{StaticResource ModernArrowButton}"
+            Margin="10"
+            HorizontalAlignment="Right" 
+            VerticalAlignment="Top"
+            ToolTip="Close"
+            Click="QuitButton_Click">
+                <TextBlock Text="✕" FontSize="14"/>
             </Button>
         </Grid>
     </Border>

@@ -12,11 +12,11 @@ namespace StickyNotesEdge
             InitializeComponent();
         }
 
-        public event EventHandler? DeleteRequested;
+        public event RoutedEventHandler? DeleteRequested;
 
         private void DeleteNote_Click(object sender, RoutedEventArgs e)
         {
-            DeleteRequested?.Invoke(this, EventArgs.Empty);
+            DeleteRequested?.Invoke(this, e);
         }
 
         private void MagnifyButton_Click(object sender, RoutedEventArgs e)
