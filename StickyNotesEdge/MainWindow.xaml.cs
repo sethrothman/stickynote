@@ -224,9 +224,9 @@ namespace StickyNotesEdge
         {
             var largeNote = new Window
             {
-                Title = "Sticky Note (View Large)",
-                Width = 400,
-                Height = 300,
+                Title = "Sticky Note",
+                Width = 500,
+                Height = 400,
                 WindowStartupLocation = WindowStartupLocation.CenterScreen,
                 ResizeMode = ResizeMode.CanResize,
                 Owner = this,

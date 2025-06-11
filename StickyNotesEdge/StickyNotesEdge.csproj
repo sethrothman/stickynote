@@ -4,6 +4,9 @@
       <SccProvider>SAK</SccProvider>
       <SccAuxPath>SAK</SccAuxPath>
       <SccLocalPath>SAK</SccLocalPath>
+	    <PublishSingleFile>true</PublishSingleFile>
+	    <SelfContained>false</SelfContained>
+	    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     </PropertyGroup>
     <PropertyGroup>
         <OutputType>WinExe</OutputType>

@@ -35,9 +35,19 @@ namespace StickyNotesEdge
         {
             if (File.Exists(_filePath))
             {
-                var json = File.ReadAllText(_filePath);
-                Notes = JsonSerializer.Deserialize<ObservableCollection<StickyNote>>(json) ?? [];
-                Notes.OrderBy(note => note.SequenceNumber);
+                try
+                {
+                    var json = File.ReadAllText(_filePath);
+                    var notes = JsonSerializer.Deserialize<ObservableCollection<StickyNote>>(json);
+                    Notes = notes ?? new ObservableCollection<StickyNote>();
+                    // Actually sort
+                    Notes = [.. Notes.OrderBy(n => n.SequenceNumber)];
+                }
+                catch (Exception ex)
+                {
+                    // Log or notify user
+                    Notes = [];
+                }
             }
         }
 
