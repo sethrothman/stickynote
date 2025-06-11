@@ -9,6 +9,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
@@ -80,7 +81,7 @@ namespace StickyNotesEdge
                         if (container != null)
                         {
                             var noteControl = VisualTreeHelper.GetChild(container, 0) as StickyNoteControl;
-                            var textBox = noteControl?.FindName("NoteTextBox") as TextBox; // Adjust name if needed
+                            var textBox = noteControl?.FindName("NoteRichTextBox") as RichTextBox; // Adjust name if needed
                             textBox?.Focus();
                         }
                     }), DispatcherPriority.Loaded);
@@ -234,18 +235,19 @@ namespace StickyNotesEdge
                 {
                     Padding = new Thickness(20),
                     Background = new SolidColorBrush(Color.FromRgb(255, 255, 200)),
-                    Child = new TextBox
+                    Child = new RichTextBox
                     {
-                        Text = note.Text,
                         FontSize = 24,
                         Background = Brushes.Transparent,
                         BorderThickness = new Thickness(0),
                         IsReadOnly = true,
-                        TextWrapping = TextWrapping.Wrap,
                         VerticalScrollBarVisibility = ScrollBarVisibility.Auto
                     }
                 }
             };
+
+            var rtb = (RichTextBox)((Border)largeNote.Content).Child;
+            rtb.Document = Utilities.XamlToFlowDocument(note.Text);
 
             var vm = DataContext as MainViewModel;
             if (vm != null)
