@@ -66,18 +66,17 @@
             </StackPanel>
 
             <!-- Note Text (below buttons, fills width, with padding from Border) -->
-            <TextBox x:Name="NoteTextBox"
+            <RichTextBox x:Name="NoteRichTextBox"
                  Grid.Row="1"
-                 Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}"
                  FontSize="16"
                  Background="Transparent"
                  BorderThickness="0"
-                 TextWrapping="Wrap"
                  AcceptsReturn="True"
                  VerticalAlignment="Stretch"
                  HorizontalAlignment="Stretch"
                  Padding="8,4"
-                 Margin="0,0,0,0"/>
+                 Margin="0,0,0,0"
+                 VerticalScrollBarVisibility="Auto" />
         </Grid>
     </Border>
 </UserControl>
