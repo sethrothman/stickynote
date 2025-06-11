@@ -22,4 +22,13 @@ Global
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {530EC97E-DFF1-4359-97AD-EA7CA26CF195}
 	EndGlobalSection
+	GlobalSection(TeamFoundationVersionControl) = preSolution
+		SccNumberOfProjects = 2
+		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccTeamFoundationServer = https://srothman.visualstudio.com/
+		SccLocalPath0 = .
+		SccProjectUniqueName1 = StickyNotesEdge\\StickyNotesEdge.csproj
+		SccProjectName1 = StickyNotesEdge
+		SccLocalPath1 = StickyNotesEdge
+	EndGlobalSection
 EndGlobal
