@@ -40,12 +40,12 @@ namespace StickyNotesEdge
                     var json = File.ReadAllText(_filePath);
                     var notes = JsonSerializer.Deserialize<ObservableCollection<StickyNote>>(json);
                     Notes = notes ?? new ObservableCollection<StickyNote>();
+
                     // Actually sort
                     Notes = [.. Notes.OrderBy(n => n.SequenceNumber)];
                 }
                 catch (Exception ex)
                 {
-                    // Log or notify user
                     Notes = [];
                 }
             }

@@ -32,8 +32,8 @@ namespace StickyNotesEdge.ViewModels
                 _notePopupIsOpen = value;
                 OnPropertyChanged(nameof(NotePopupIsOpen));
             }
-
         }
+
         public ObservableCollection<StickyNote> Notes
         {
             get => _notes;

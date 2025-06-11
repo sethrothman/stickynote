@@ -5,6 +5,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Documents;
 using System.Windows.Markup;
 using System.Windows.Media.Animation;
@@ -31,18 +32,26 @@ namespace StickyNotesEdge
 
             try
             {
-                if (text.TrimStart().StartsWith("<FlowDocument"))
-                {
-                    var doc = new FlowDocument();
-                    var range = new TextRange(doc.ContentStart, doc.ContentEnd);
-                    using var ms = new MemoryStream(Encoding.UTF8.GetBytes(text));
-                    range.Load(ms, DataFormats.Xaml);
-                    return doc;
-                }
-                else
-                {
-                    return new FlowDocument(new Paragraph(new Run(text)));
-                }
+                //if (text.TrimStart().StartsWith("<FlowDocument"))
+                //{
+                //    var doc = new FlowDocument();
+                //    var range = new TextRange(doc.ContentStart, doc.ContentEnd);
+                //    using var ms = new MemoryStream(Encoding.UTF8.GetBytes(text));
+                //    range.Load(ms, DataFormats.Xaml);
+                //    return doc;
+                //}
+                //else
+                //{
+                //    return new FlowDocument(new Paragraph(new Run(text)));
+                //}
+
+                var doc = new FlowDocument();
+                var range = new TextRange(doc.ContentStart, doc.ContentEnd);
+
+                using var ms = new MemoryStream(Encoding.UTF8.GetBytes(text));
+                range.Load(ms, DataFormats.Xaml);
+
+                return doc;
             }
             catch
             {

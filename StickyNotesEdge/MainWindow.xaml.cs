@@ -241,13 +241,14 @@ namespace StickyNotesEdge
                         Background = Brushes.Transparent,
                         BorderThickness = new Thickness(0),
                         IsReadOnly = true,
+                        Document = Utilities.XamlToFlowDocument(note.Text),
                         VerticalScrollBarVisibility = ScrollBarVisibility.Auto
                     }
                 }
             };
 
-            var rtb = (RichTextBox)((Border)largeNote.Content).Child;
-            rtb.Document = Utilities.XamlToFlowDocument(note.Text);
+            //var rtb = (RichTextBox)((Border)largeNote.Content).Child;
+            //rtb.Document = Utilities.XamlToFlowDocument(note.Text);
 
             var vm = DataContext as MainViewModel;
             if (vm != null)
